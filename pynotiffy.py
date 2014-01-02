@@ -68,12 +68,17 @@ void read_events(int fd)
     {
         char buffer[len];
         int rc = read(fd, buffer, len);
-        struct inotify_event* bstruct = ((struct inotify_event*)buffer);
-        int wd = bstruct->wd;
-        uint32_t mask = bstruct->mask;
-        uint32_t cookie = bstruct->cookie;
-        uint32_t length = bstruct->len;
-        callback_data(wd, mask, cookie, length, (const char*)bstruct->name); 
+        int ptr = 0;
+        while (ptr < rc)
+        {
+            struct inotify_event* bstruct = ((struct inotify_event*)buffer);
+            int wd = bstruct->wd;
+            uint32_t mask = bstruct->mask;
+            uint32_t cookie = bstruct->cookie;
+            uint32_t length = bstruct->len;
+            callback_data(wd, mask, cookie, length, (const char*)bstruct->name); 
+            ptr += sizeof(struct inotify_event)+length;
+        }
     }
 }
 
@@ -82,12 +87,17 @@ void block_read_events(int fd)
     unsigned int len = ((sizeof(struct inotify_event)+256) * 10); 
     char buffer[len];
     int rc = read(fd, buffer, len);
-    struct inotify_event* bstruct = ((struct inotify_event*)buffer);
-    int wd = bstruct->wd;
-    uint32_t mask = bstruct->mask;
-    uint32_t cookie = bstruct->cookie;
-    uint32_t length = bstruct->len;
-    callback_data(wd, mask, cookie, length, (const char*)bstruct->name); 
+    int ptr = 0;
+    while (ptr < rc)
+    {
+        struct inotify_event* bstruct = ((struct inotify_event*)(buffer+ptr));
+        int wd = bstruct->wd;
+        uint32_t mask = bstruct->mask;
+        uint32_t cookie = bstruct->cookie;
+        uint32_t length = bstruct->len;
+        callback_data(wd, mask, cookie, length, (const char*)bstruct->name); 
+        ptr += sizeof(struct inotify_event)+length;
+    }
 }
         """)
 

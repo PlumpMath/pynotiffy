@@ -78,7 +78,6 @@ class TestWatcher(unittest.TestCase):
             self.insert_count += 1
         self.watcher.add_listener(lnr, mask=pynotiffy.IN_MODIFY)
         write_empty_file("test")
-        self.watcher.block_poll()
         modify_file("test")
         self.watcher.block_poll()
         self.assertEqual(self.insert_count,1)
