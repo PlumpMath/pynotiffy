@@ -143,6 +143,9 @@ class Watcher:
         self.watcher = inotify_init()
         Watcher.watchers.append(self)
         self.listeners = []
+        self.create_listeners = []
+        self.delete_listeners = []
+        self.modify_listeners = []
         self.watch_obj = inotify_add_watch(self.watcher, path, IN_MODIFY | IN_CREATE | IN_DELETE)
     def block_poll(self):
         block_read_events(self.watcher)
@@ -155,14 +158,35 @@ class Watcher:
             return
         else:
             for x in Watcher.event_dict[self.watch_obj]:
-                for listener in self.listeners:
-                    listener(x)
+                self.handle_listeners(x)
             del Watcher.event_dict[self.watch_obj]
+    def handle_listeners(self, evt):
+        for listener in self.listeners:
+            listener(evt)
+        if evt[0] == None: 
+            print "This shouldn't happen"
+            return
+        if evt[0] & IN_CREATE:
+            for listener in self.create_listeners:
+                listener(evt)
+        if evt[0] & IN_DELETE:
+            for listener in self.delete_listeners:
+                listener(evt)
+        if evt[0] & IN_MODIFY:
+            for listener in self.modify_listeners:
+                listener(evt)
 
 
-    def add_listener(self, listener):
-        self.listeners.append(listener)
-
+    def add_listener(self, listener, mask=None):
+        if mask == None:
+            self.listeners.append(listener)
+            return
+        if mask & IN_CREATE:
+            self.create_listeners.append(listener)
+        if mask & IN_DELETE:
+            self.delete_listeners.append(listener)
+        if mask & IN_MODIFY:
+            self.modify_listeners.append(listener)
 
 def main():
     w = Watcher("./test")
