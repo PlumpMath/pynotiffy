@@ -14,6 +14,9 @@ def modify_file(fname):
     fd.flush()
     fd.close()
 
+def delete_file(fname):
+    os.unlink("{test_dir}/{fname}".format(test_dir=TEST_DIR, fname=fname))
+
 class TestWatcher(unittest.TestCase):
     def setUp(self):
         #Create testdir
@@ -99,7 +102,20 @@ class TestWatcher(unittest.TestCase):
         self.watcher.poll()
         self.watcher.close()
         self.assertEqual(self.insert_count,0)
-    
+   
+    def test_delete_listener(self):
+        write_empty_file("test")
+        self.watcher = pynotiffy.Watcher(TEST_DIR)
+        self.insert_count = 0
+        def lnr(x):
+            self.insert_count += 1
+        self.watcher.add_listener(lnr, mask=pynotiffy.IN_DELETE)
+        modify_file("test")
+        delete_file("test")
+        self.watcher.poll()
+        self.watcher.close()
+        self.assertEqual(self.insert_count,0)
+       
 
     def test_handle_more_than_one_event_per_poll(self):
         self.watcher = pynotiffy.Watcher(TEST_DIR)
