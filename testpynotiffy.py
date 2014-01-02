@@ -25,6 +25,16 @@ class TestWatcher(unittest.TestCase):
         self.watcher.block_poll()
         self.assertEqual(self.insert_count,1)
         
+    def test_nonblocking_poll(self):
+        self.watcher = pynotiffy.Watcher(TEST_DIR)
+        self.insert_count = 0
+        def lnr(x):
+            self.insert_count += 1
+        self.watcher.add_listener(lnr)
+        write_empty_file("test")
+        self.watcher.poll()
+        self.assertEqual(self.insert_count,1)
+
 
     def test_blocking_poll_all(self):
         pynotiffy.Watcher.block_poll_all()

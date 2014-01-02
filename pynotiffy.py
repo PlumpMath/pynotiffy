@@ -8,6 +8,7 @@ int inotify_init();
 
 int inotify_add_watch(int fd, const char* name, uint32_t mask);
 
+void read_events(int fd);
 void block_read_events(int fd);
 
 int define_in_modify();
@@ -22,6 +23,8 @@ C = ffi.verify(r"""
 #include <errno.h>
 #include <sys/inotify.h>
 #include <sys/ioctl.h>
+#include <sys/select.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 #include <fcntl.h>
@@ -47,6 +50,33 @@ int event_size()
 }
 
 
+void read_events(int fd)
+{
+    unsigned int len = ((sizeof(struct inotify_event)+256) * 10); 
+    
+    fd_set r;
+    FD_ZERO(&r);
+    FD_SET(fd, &r);
+    struct timeval tv;
+    tv.tv_sec = 0; 
+    tv.tv_usec = 0;
+
+    int rv = select(fd+1, &r, NULL, NULL, &tv);
+    if (rv == -1)
+        printf("There was an error.\n");
+    if (FD_ISSET(fd, &r))
+    {
+        char buffer[len];
+        int rc = read(fd, buffer, len);
+        struct inotify_event* bstruct = ((struct inotify_event*)buffer);
+        int wd = bstruct->wd;
+        uint32_t mask = bstruct->mask;
+        uint32_t cookie = bstruct->cookie;
+        uint32_t length = bstruct->len;
+        callback_data(wd, mask, cookie, length, (const char*)bstruct->name); 
+    }
+}
+
 void block_read_events(int fd)
 {
     unsigned int len = ((sizeof(struct inotify_event)+256) * 10); 
@@ -59,7 +89,6 @@ void block_read_events(int fd)
     uint32_t length = bstruct->len;
     callback_data(wd, mask, cookie, length, (const char*)bstruct->name); 
 }
-
         """)
 
 def get_in_attrs():
@@ -71,7 +100,8 @@ def get_in_attrs():
 
 def block_read_events(fd):
     C.block_read_events(fd)
-
+def read_events(fd):
+    C.read_events(fd)
 def inotify_init():
     return C.inotify_init()
 
@@ -116,6 +146,11 @@ class Watcher:
         self.watch_obj = inotify_add_watch(self.watcher, path, IN_MODIFY | IN_CREATE | IN_DELETE)
     def block_poll(self):
         block_read_events(self.watcher)
+        self.handle_events()
+    def poll(self):
+        read_events(self.watcher)
+        self.handle_events()
+    def handle_events(self):
         if Watcher.event_dict.get(self.watch_obj) == None:
             return
         else:
@@ -123,6 +158,7 @@ class Watcher:
                 for listener in self.listeners:
                     listener(x)
             del Watcher.event_dict[self.watch_obj]
+
 
     def add_listener(self, listener):
         self.listeners.append(listener)
