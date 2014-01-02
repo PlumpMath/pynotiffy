@@ -58,7 +58,8 @@ int event_size()
 
 void read_events(int fd)
 {
-    unsigned int len = ((sizeof(struct inotify_event)+256) * 10); 
+    unsigned int len = 0; 
+    ioctl(fd, FIONREAD, &len);
     
     fd_set r;
     FD_ZERO(&r);
@@ -90,7 +91,8 @@ void read_events(int fd)
 
 void block_read_events(int fd)
 {
-    unsigned int len = ((sizeof(struct inotify_event)+256) * 10); 
+    unsigned int len = 0; 
+    ioctl(fd, FIONREAD, &len);
     char buffer[len];
     int rc = read(fd, buffer, len);
     int ptr = 0;
