@@ -26,8 +26,8 @@ class TestWatcher(unittest.TestCase):
         self.assertEqual(self.insert_count,1)
         
 
-    def test_poll_all(self):
-        pass #pynotiffy.Watcher.poll_all()
+    def test_blocking_poll_all(self):
+        pynotiffy.Watcher.block_poll_all()
 
 
 def main():
