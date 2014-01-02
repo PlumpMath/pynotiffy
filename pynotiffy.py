@@ -116,19 +116,19 @@ def get_in_attrs():
             "EVENT_SIZE":C.event_size(),
             }
 
-def block_read_events(fd):
-    C.block_read_events(fd)
-def read_events(fd):
-    C.read_events(fd)
-def inotify_init():
-    return C.inotify_init()
-def pynotiffy_close(fd):
-    return C.pynotiffy_close(fd)
+#def block_read_events(fd):
+#    C.block_read_events(fd)
+#def read_events(fd):
+#    C.read_events(fd)
+#def inotify_init():
+#    return C.inotify_init()
+#def pynotiffy_close(fd):
+#    return C.pynotiffy_close(fd)
 
-def inotify_add_watch(fd, name, mask):
-    return C.inotify_add_watch(fd, name, mask)
-def inotify_rm_watch(fd, wd):
-    return C.inotify_rm_watch(fd, wd)
+#def inotify_add_watch(fd, name, mask):
+#    return C.inotify_add_watch(fd, name, mask)
+#def inotify_rm_watch(fd, wd):
+#    return C.inotify_rm_watch(fd, wd)
 
 
 
@@ -168,7 +168,7 @@ class Watcher:
         self.create_listeners = []
         self.delete_listeners = []
         self.modify_listeners = []
-        self.watch_obj = inotify_add_watch(self.watcher, path, IN_MODIFY | IN_CREATE | IN_DELETE)
+        self.watch_obj = C.inotify_add_watch(self.watcher, path, IN_MODIFY | IN_CREATE | IN_DELETE)
     def close(self):
         C.inotify_rm_watch(self.watcher, self.watch_obj)
         C.pynotiffy_close(self.watcher)
