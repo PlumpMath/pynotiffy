@@ -191,8 +191,17 @@ class Watcher:
 def main():
     w = Watcher("./test")
     def lnr(x):
-        print "LNR!" + str(x)
+        print "Generic listener {0}".format(x)
+    def create_lnr(x):
+        print "Create Listener Called: {0}".format(x)
+    def modify_lnr(x):
+        print "Modify Listener Called: {0}".format(x)
+    def delete_lnr(x):
+        print "Delete Listener Called: {0}".format(x)
     w.add_listener(lnr)
+    w.add_listener(create_lnr, mask=IN_CREATE)
+    w.add_listener(modify_lnr, mask=IN_MODIFY)
+    w.add_listener(delete_lnr, mask=IN_DELETE)
     import time
     while True:
         w.block_poll()
