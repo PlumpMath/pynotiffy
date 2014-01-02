@@ -29,6 +29,7 @@ class TestWatcher(unittest.TestCase):
         self.watcher.add_listener(lnr)
         write_empty_file("test")
         self.watcher.block_poll()
+        self.watcher.close()
         self.assertEqual(self.insert_count,1)
         
     def test_nonblocking_poll(self):
@@ -39,6 +40,7 @@ class TestWatcher(unittest.TestCase):
         self.watcher.add_listener(lnr)
         write_empty_file("test")
         self.watcher.poll()
+        self.watcher.close()
         self.assertEqual(self.insert_count,1)
 
     def test_create_listener(self):
@@ -49,6 +51,7 @@ class TestWatcher(unittest.TestCase):
         self.watcher.add_listener(lnr, mask=pynotiffy.IN_CREATE)
         write_empty_file("test")
         self.watcher.poll()
+        self.watcher.close()
         self.assertEqual(self.insert_count,1)
 
     def test_exclude_create_listener(self):
@@ -59,6 +62,7 @@ class TestWatcher(unittest.TestCase):
         self.watcher.add_listener(lnr, mask=pynotiffy.IN_DELETE)
         write_empty_file("test")
         self.watcher.poll()
+        self.watcher.close()
         self.assertEqual(self.insert_count,0)
 
     def test_exclude_create_listener2(self):
@@ -69,6 +73,7 @@ class TestWatcher(unittest.TestCase):
         self.watcher.add_listener(lnr, mask=pynotiffy.IN_MODIFY)
         write_empty_file("test")
         self.watcher.poll()
+        self.watcher.close()
         self.assertEqual(self.insert_count,0)
 
     def test_modify_listener(self):
@@ -80,6 +85,7 @@ class TestWatcher(unittest.TestCase):
         write_empty_file("test")
         modify_file("test")
         self.watcher.block_poll()
+        self.watcher.close()
         self.assertEqual(self.insert_count,1)
 
     def test_exclude_modify_listener(self):
@@ -91,6 +97,7 @@ class TestWatcher(unittest.TestCase):
         self.watcher.add_listener(lnr, mask=pynotiffy.IN_CREATE)
         modify_file("test")
         self.watcher.poll()
+        self.watcher.close()
         self.assertEqual(self.insert_count,0)
     
 
@@ -103,10 +110,16 @@ class TestWatcher(unittest.TestCase):
         write_empty_file("test")
         modify_file("test")
         self.watcher.block_poll()
+        self.watcher.close()
         self.assertEqual(self.insert_count,2)
 
     def test_blocking_poll_all(self):
         pynotiffy.Watcher.block_poll_all()
+
+    def test_remove_from_poll_all_list_on_delete(self):
+        self.watcher = pynotiffy.Watcher(TEST_DIR)
+        self.watcher.close()
+        self.assertEqual(len(pynotiffy.Watcher.watchers), 0)
 
 
 def main():

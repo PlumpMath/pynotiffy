@@ -7,6 +7,8 @@ ffi.cdef("""
 int inotify_init();
 
 int inotify_add_watch(int fd, const char* name, uint32_t mask);
+int inotify_rm_watch(int fd, int wd);
+void pynotiffy_close(int fd);
 
 void read_events(int fd);
 void block_read_events(int fd);
@@ -29,6 +31,10 @@ C = ffi.verify(r"""
 
 #include <fcntl.h>
 
+void pynotiffy_close(int fd)
+{
+    close(fd);
+}
 void (*callback_data)(int wd, int mask, int cookie, int length, const char* name);
 
 int define_in_create()
@@ -114,9 +120,13 @@ def read_events(fd):
     C.read_events(fd)
 def inotify_init():
     return C.inotify_init()
+def pynotiffy_close(fd):
+    return C.pynotiffy_close(fd)
 
 def inotify_add_watch(fd, name, mask):
     return C.inotify_add_watch(fd, name, mask)
+def inotify_rm_watch(fd, wd):
+    return C.inotify_rm_watch(fd, wd)
 
 
 
@@ -150,18 +160,22 @@ class Watcher:
 
     def __init__(self, path):
         #Create the watcher
-        self.watcher = inotify_init()
+        self.watcher = C.inotify_init()
         Watcher.watchers.append(self)
         self.listeners = []
         self.create_listeners = []
         self.delete_listeners = []
         self.modify_listeners = []
         self.watch_obj = inotify_add_watch(self.watcher, path, IN_MODIFY | IN_CREATE | IN_DELETE)
+    def close(self):
+        C.inotify_rm_watch(self.watcher, self.watch_obj)
+        C.pynotiffy_close(self.watcher)
+        Watcher.watchers.remove(self)
     def block_poll(self):
-        block_read_events(self.watcher)
+        C.block_read_events(self.watcher)
         self.handle_events()
     def poll(self):
-        read_events(self.watcher)
+        C.read_events(self.watcher)
         self.handle_events()
     def handle_events(self):
         if Watcher.event_dict.get(self.watch_obj) == None:
