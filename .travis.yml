@@ -7,4 +7,6 @@ python:
   - "pypy"
 install:
   - pip install cffi
+before-script: 
+  - sudo apt-get install gdb
 script: ./travis_tests.sh

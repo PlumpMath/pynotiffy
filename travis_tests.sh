@@ -1,3 +1,3 @@
 #!/bin/bash
 
-python testpynotiffy.py --verbose
+cat script.gdb | gdb --args python testpynotiffy.py --verbose
