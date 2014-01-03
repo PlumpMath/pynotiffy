@@ -215,7 +215,7 @@ class Watcher:
         self.closed = False
         self.listeners = []
         self.listener_masks = {}
-        self.watch_obj = C.inotify_add_watch(self.watcher, path, self.mask)
+        self.watch_obj = C.inotify_add_watch(self.watcher, bytes(path), self.mask)
     def close(self):
         self.closed = True
         C.inotify_rm_watch(self.watcher, self.watch_obj)
