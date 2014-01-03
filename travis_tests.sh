@@ -1,3 +1,3 @@
 #!/bin/bash
 
-python testpynotiffy.py
+python testpynotiffy.py --verbose
