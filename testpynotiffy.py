@@ -41,7 +41,6 @@ class TestWatcher(unittest.TestCase):
         self.watcher = pynotiffy.Watcher(TEST_DIR)
         self.insert_count = 0
         def lnr(x):
-            print x
             self.insert_count += 1
         self.watcher.add_listener(lnr)
         write_empty_file("test")
@@ -53,7 +52,6 @@ class TestWatcher(unittest.TestCase):
         self.watcher = pynotiffy.Watcher(TEST_DIR)
         self.insert_count = 0
         def lnr(x):
-            print x
             self.insert_count += 1
         self.watcher.add_listener(lnr, mask=pynotiffy.IN_CREATE)
         write_empty_file("test")
@@ -170,6 +168,52 @@ class TestWatcher(unittest.TestCase):
         self.watcher = pynotiffy.Watcher(TEST_DIR)
         self.watcher.handle_listeners((None, None, None, None))
         self.watcher.close()
+
+    def test_multiple_listeners(self):
+        self.watcher = pynotiffy.Watcher(TEST_DIR)
+        self.insert_count = 0
+        self.insert_count2 = 0
+        def lnr(x):
+            self.insert_count += 1
+        def lnr2(x):
+            self.insert_count2 += 1
+        self.watcher.add_listener(lnr, pynotiffy.IN_CREATE)
+        self.watcher.add_listener(lnr2, pynotiffy.IN_CREATE)
+        write_empty_file("test")
+        modify_file("test")
+        pynotiffy.Watcher.block_poll_all()
+        self.watcher.close()
+        self.assertEqual(self.insert_count,self.insert_count2)
+    def test_multiple_listeners2(self):
+        self.watcher = pynotiffy.Watcher(TEST_DIR)
+        self.insert_count = 0
+        self.insert_count2 = 0
+        def lnr(x):
+            self.insert_count += 1
+        def lnr2(x):
+            self.insert_count2 += 1
+        self.watcher.add_listener(lnr, pynotiffy.IN_MODIFY)
+        self.watcher.add_listener(lnr2, pynotiffy.IN_MODIFY)
+        write_empty_file("test")
+        modify_file("test")
+        pynotiffy.Watcher.block_poll_all()
+        self.watcher.close()
+        self.assertEqual(self.insert_count,self.insert_count2)
+    def test_multiple_listeners3(self):
+        self.watcher = pynotiffy.Watcher(TEST_DIR)
+        self.insert_count = 0
+        self.insert_count2 = 0
+        def lnr(x):
+            self.insert_count += 1
+        def lnr2(x):
+            self.insert_count2 += 1
+        self.watcher.add_listener(lnr, pynotiffy.IN_MODIFY | pynotiffy.IN_CREATE)
+        self.watcher.add_listener(lnr2, pynotiffy.IN_MODIFY | pynotiffy.IN_CREATE)
+        write_empty_file("test")
+        modify_file("test")
+        pynotiffy.Watcher.block_poll_all()
+        self.watcher.close()
+        self.assertEqual(self.insert_count,self.insert_count2)
 
 def main():
     unittest.main()

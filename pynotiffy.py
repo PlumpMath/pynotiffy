@@ -216,9 +216,6 @@ class Watcher:
     def handle_listeners(self, evt):
         for listener in self.listeners:
             listener(evt)
-        if evt[0] == None: 
-            print "This shouldn't happen"
-            return
         for mask in self.listener_masks.keys():
             if mask & evt[0]: 
                 for listener in self.listener_masks[mask]:
