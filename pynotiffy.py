@@ -16,6 +16,8 @@ void block_read_events(int fd);
 int define_in_modify();
 int define_in_create();
 int define_in_delete();
+int define_in_access();
+int define_in_open();
 int event_size();
 
 void (*callback_data)(int wd, int mask, int cookie, int length, const char* name);
@@ -49,7 +51,14 @@ int define_in_delete()
 {
     return IN_DELETE;
 }
-
+int define_in_access()
+{
+    return IN_ACCESS;
+}
+int define_in_open()
+{
+    return IN_OPEN;
+}
 int event_size()
 {
     return sizeof(struct inotify_event);
@@ -78,7 +87,7 @@ void read_events(int fd)
         int ptr = 0;
         while (ptr < rc)
         {
-            struct inotify_event* bstruct = ((struct inotify_event*)buffer);
+            struct inotify_event* bstruct = ((struct inotify_event*)buffer+ptr);
             int wd = bstruct->wd;
             uint32_t mask = bstruct->mask;
             uint32_t cookie = bstruct->cookie;
@@ -113,6 +122,8 @@ def get_in_attrs():
     return {"IN_MODIFY":C.define_in_modify(), 
             "IN_CREATE":C.define_in_create(),
             "IN_DELETE":C.define_in_delete(),
+            "IN_ACCESS":C.define_in_access(),
+            "IN_OPEN":C.define_in_open(),
             "EVENT_SIZE":C.event_size(),
             }
 
@@ -142,6 +153,8 @@ attrs = get_in_attrs()
 IN_MODIFY = attrs["IN_MODIFY"]
 IN_CREATE = attrs["IN_CREATE"]
 IN_DELETE = attrs["IN_DELETE"]
+IN_ACCESS = attrs["IN_ACCESS"]
+IN_OPEN = attrs["IN_OPEN"]
 EVENT_SIZE = attrs["EVENT_SIZE"]
 
 
@@ -168,7 +181,9 @@ class Watcher:
         self.create_listeners = []
         self.delete_listeners = []
         self.modify_listeners = []
-        self.watch_obj = C.inotify_add_watch(self.watcher, path, IN_MODIFY | IN_CREATE | IN_DELETE)
+        self.access_listeners = []
+        self.open_listeners = []
+        self.watch_obj = C.inotify_add_watch(self.watcher, path, IN_MODIFY | IN_CREATE | IN_DELETE | IN_ACCESS | IN_OPEN)
     def close(self):
         C.inotify_rm_watch(self.watcher, self.watch_obj)
         C.pynotiffy_close(self.watcher)
@@ -201,6 +216,12 @@ class Watcher:
         if evt[0] & IN_MODIFY:
             for listener in self.modify_listeners:
                 listener(evt)
+        if evt[0] & IN_ACCESS:
+            for listener in self.access_listeners:
+                listener(evt)
+        if evt[0] & IN_OPEN:
+            for listener in self.open_listeners:
+                listener(evt)
 
 
     def add_listener(self, listener, mask=None):
@@ -213,4 +234,8 @@ class Watcher:
             self.delete_listeners.append(listener)
         if mask & IN_MODIFY:
             self.modify_listeners.append(listener)
+        if mask & IN_OPEN:
+            self.open_listeners.append(listener)
+        if mask & IN_ACCESS:
+            self.access_listeners.append(listener)
 

@@ -23,6 +23,8 @@ class TestWatcher(unittest.TestCase):
         if os.path.isdir(TEST_DIR):
             shutil.rmtree(TEST_DIR)
         os.mkdir(TEST_DIR)
+        pynotiffy.Watcher.watchers = []
+        pynotiffy.Watcher.event_dict = {}
 
     def test_blocking_poll(self):
         self.watcher = pynotiffy.Watcher(TEST_DIR)
@@ -33,12 +35,13 @@ class TestWatcher(unittest.TestCase):
         write_empty_file("test")
         self.watcher.block_poll()
         self.watcher.close()
-        self.assertEqual(self.insert_count,1)
+        self.assertEqual(self.insert_count,2)
         
     def test_nonblocking_poll(self):
         self.watcher = pynotiffy.Watcher(TEST_DIR)
         self.insert_count = 0
         def lnr(x):
+            print x
             self.insert_count += 1
         self.watcher.add_listener(lnr)
         write_empty_file("test")
@@ -50,6 +53,7 @@ class TestWatcher(unittest.TestCase):
         self.watcher = pynotiffy.Watcher(TEST_DIR)
         self.insert_count = 0
         def lnr(x):
+            print x
             self.insert_count += 1
         self.watcher.add_listener(lnr, mask=pynotiffy.IN_CREATE)
         write_empty_file("test")
@@ -110,12 +114,24 @@ class TestWatcher(unittest.TestCase):
         def lnr(x):
             self.insert_count += 1
         self.watcher.add_listener(lnr, mask=pynotiffy.IN_DELETE)
+        delete_file("test")
+        self.watcher.poll()
+        self.watcher.close()
+        self.assertEqual(self.insert_count,1)
+       
+    def test_exclude_delete_listener(self):
+        write_empty_file("test")
+        self.watcher = pynotiffy.Watcher(TEST_DIR)
+        self.insert_count = 0
+        def lnr(x):
+            self.insert_count += 1
+        self.watcher.add_listener(lnr, mask=pynotiffy.IN_DELETE)
+        write_empty_file("test2")
         modify_file("test")
         delete_file("test")
         self.watcher.poll()
         self.watcher.close()
         self.assertEqual(self.insert_count,0)
-       
 
     def test_handle_more_than_one_event_per_poll(self):
         self.watcher = pynotiffy.Watcher(TEST_DIR)
@@ -127,7 +143,7 @@ class TestWatcher(unittest.TestCase):
         modify_file("test")
         self.watcher.block_poll()
         self.watcher.close()
-        self.assertEqual(self.insert_count,2)
+        self.assertEqual(self.insert_count,3)
 
     def test_blocking_poll_all(self):
         self.watcher = pynotiffy.Watcher(TEST_DIR)
@@ -139,7 +155,7 @@ class TestWatcher(unittest.TestCase):
         modify_file("test")
         pynotiffy.Watcher.block_poll_all()
         self.watcher.close()
-        self.assertEqual(self.insert_count,2)
+        self.assertEqual(self.insert_count,3)
 
     def test_remove_from_poll_all_list_on_delete(self):
         self.watcher = pynotiffy.Watcher(TEST_DIR)
