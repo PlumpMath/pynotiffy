@@ -207,13 +207,15 @@ class Watcher:
 
     def __init__(self, path, mask=None):
         if mask == None: 
-            mask = IN_MODIFY | IN_CREATE | IN_DELETE | IN_ACCESS | IN_OPEN | IN_CLOSE_NOWRITE | IN_CLOSE_WRITE | IN_ATTRIB
+            self.mask = IN_MODIFY | IN_CREATE | IN_DELETE | IN_ACCESS | IN_OPEN | IN_CLOSE_NOWRITE | IN_CLOSE_WRITE | IN_ATTRIB
+        else:
+            self.mask = mask
         self.watcher = C.inotify_init()
         Watcher.watchers.append(self)
         self.closed = False
         self.listeners = []
         self.listener_masks = {}
-        self.watch_obj = C.inotify_add_watch(self.watcher, path, mask)
+        self.watch_obj = C.inotify_add_watch(self.watcher, path, self.mask)
     def close(self):
         self.closed = True
         C.inotify_rm_watch(self.watcher, self.watch_obj)
@@ -236,8 +238,9 @@ class Watcher:
                 self.handle_listeners(x)
             del Watcher.event_dict[self.watch_obj]
     def handle_listeners(self, evt):
-        for listener in self.listeners:
-            listener(evt)
+        if self.mask & evt[0]:
+            for listener in self.listeners:
+                listener(evt)
         for mask in self.listener_masks.keys():
             if mask & evt[0]: 
                 for listener in self.listener_masks[mask]:

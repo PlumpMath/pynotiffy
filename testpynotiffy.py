@@ -186,10 +186,6 @@ class TestWatcher(unittest.TestCase):
         self.watcher = pynotiffy.Watcher(TEST_DIR)
         self.watcher.poll()
         self.watcher.close()
-    def test_evt_with_None(self):
-        self.watcher = pynotiffy.Watcher(TEST_DIR)
-        self.watcher.handle_listeners((None, None, None, None))
-        self.watcher.close()
 
     def test_multiple_listeners(self):
         self.watcher = pynotiffy.Watcher(TEST_DIR)
