@@ -20,6 +20,7 @@ int define_in_access();
 int define_in_open();
 int define_in_close_write();
 int define_in_close_nowrite();
+int define_in_attrib();
 int event_size();
 
 void (*callback_data)(int wd, int mask, int cookie, int length, const char* name);
@@ -68,6 +69,10 @@ int define_in_close_nowrite()
 int define_in_close_write()
 {
     return IN_CLOSE_WRITE;
+}
+int define_in_attrib()
+{
+    return IN_ATTRIB;
 }
 int event_size()
 {
@@ -136,6 +141,7 @@ def get_in_attrs():
             "IN_CLOSE_WRITE":C.define_in_close_write(),
             "IN_CLOSE_NOWRITE":C.define_in_close_nowrite(),
             "IN_OPEN":C.define_in_open(),
+            "IN_ATTRIB":C.define_in_attrib(),
             "EVENT_SIZE":C.event_size(),
             }
 
@@ -157,7 +163,11 @@ def get_in_attrs():
 
 @ffi.callback("void(int, int, int, int, const char*)")
 def callback_data(wd, mask, cookie, length, name):
-    obj = (mask, cookie, length, ffi.string(name))
+    if length == 0:
+        name_str = None
+    else:
+        name_str = ffi.string(name)
+    obj = (mask, cookie, length, name_str)
     Watcher.handle_event(wd, obj)
 C.callback_data = callback_data
 
@@ -169,6 +179,7 @@ IN_ACCESS = attrs["IN_ACCESS"]
 IN_CLOSE_WRITE = attrs["IN_CLOSE_WRITE"]
 IN_CLOSE_NOWRITE = attrs["IN_CLOSE_NOWRITE"]
 IN_CLOSE = IN_CLOSE_NOWRITE | IN_CLOSE_WRITE
+IN_ATTRIB = attrs["IN_ATTRIB"]
 
 IN_OPEN = attrs["IN_OPEN"]
 EVENT_SIZE = attrs["EVENT_SIZE"]
@@ -189,13 +200,19 @@ class Watcher:
         for watcher in Watcher.watchers:
             watcher.block_poll()
 
-    def __init__(self, path):
-        #Create the watcher
+    @staticmethod
+    def poll_all():
+        for watcher in Watcher.watchers:
+            watcher.poll()
+
+    def __init__(self, path, mask=None):
+        if mask == None: 
+            mask = IN_MODIFY | IN_CREATE | IN_DELETE | IN_ACCESS | IN_OPEN | IN_CLOSE_NOWRITE | IN_CLOSE_WRITE | IN_ATTRIB
         self.watcher = C.inotify_init()
         Watcher.watchers.append(self)
         self.listeners = []
         self.listener_masks = {}
-        self.watch_obj = C.inotify_add_watch(self.watcher, path, IN_MODIFY | IN_CREATE | IN_DELETE | IN_ACCESS | IN_OPEN | IN_CLOSE_NOWRITE | IN_CLOSE_WRITE)
+        self.watch_obj = C.inotify_add_watch(self.watcher, path, mask)
     def close(self):
         C.inotify_rm_watch(self.watcher, self.watch_obj)
         C.pynotiffy_close(self.watcher)
