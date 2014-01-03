@@ -35,7 +35,7 @@ class TestWatcher(unittest.TestCase):
         write_empty_file("test")
         self.watcher.block_poll()
         self.watcher.close()
-        self.assertEqual(self.insert_count,2)
+        self.assertEqual(self.insert_count,3)
         
     def test_nonblocking_poll(self):
         self.watcher = pynotiffy.Watcher(TEST_DIR)
@@ -143,7 +143,7 @@ class TestWatcher(unittest.TestCase):
         modify_file("test")
         self.watcher.block_poll()
         self.watcher.close()
-        self.assertEqual(self.insert_count,3)
+        self.assertEqual(self.insert_count,6)
 
     def test_blocking_poll_all(self):
         self.watcher = pynotiffy.Watcher(TEST_DIR)
@@ -155,7 +155,7 @@ class TestWatcher(unittest.TestCase):
         modify_file("test")
         pynotiffy.Watcher.block_poll_all()
         self.watcher.close()
-        self.assertEqual(self.insert_count,3)
+        self.assertEqual(self.insert_count,6)
 
     def test_remove_from_poll_all_list_on_delete(self):
         self.watcher = pynotiffy.Watcher(TEST_DIR)

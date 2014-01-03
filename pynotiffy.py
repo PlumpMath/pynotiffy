@@ -18,6 +18,8 @@ int define_in_create();
 int define_in_delete();
 int define_in_access();
 int define_in_open();
+int define_in_close_write();
+int define_in_close_nowrite();
 int event_size();
 
 void (*callback_data)(int wd, int mask, int cookie, int length, const char* name);
@@ -58,6 +60,14 @@ int define_in_access()
 int define_in_open()
 {
     return IN_OPEN;
+}
+int define_in_close_nowrite()
+{
+    return IN_CLOSE_NOWRITE;
+}
+int define_in_close_write()
+{
+    return IN_CLOSE_WRITE;
 }
 int event_size()
 {
@@ -123,6 +133,8 @@ def get_in_attrs():
             "IN_CREATE":C.define_in_create(),
             "IN_DELETE":C.define_in_delete(),
             "IN_ACCESS":C.define_in_access(),
+            "IN_CLOSE_WRITE":C.define_in_close_write(),
+            "IN_CLOSE_NOWRITE":C.define_in_close_nowrite(),
             "IN_OPEN":C.define_in_open(),
             "EVENT_SIZE":C.event_size(),
             }
@@ -154,6 +166,10 @@ IN_MODIFY = attrs["IN_MODIFY"]
 IN_CREATE = attrs["IN_CREATE"]
 IN_DELETE = attrs["IN_DELETE"]
 IN_ACCESS = attrs["IN_ACCESS"]
+IN_CLOSE_WRITE = attrs["IN_CLOSE_WRITE"]
+IN_CLOSE_NOWRITE = attrs["IN_CLOSE_NOWRITE"]
+IN_CLOSE = IN_CLOSE_NOWRITE | IN_CLOSE_WRITE
+
 IN_OPEN = attrs["IN_OPEN"]
 EVENT_SIZE = attrs["EVENT_SIZE"]
 
@@ -179,7 +195,7 @@ class Watcher:
         Watcher.watchers.append(self)
         self.listeners = []
         self.listener_masks = {}
-        self.watch_obj = C.inotify_add_watch(self.watcher, path, IN_MODIFY | IN_CREATE | IN_DELETE | IN_ACCESS | IN_OPEN)
+        self.watch_obj = C.inotify_add_watch(self.watcher, path, IN_MODIFY | IN_CREATE | IN_DELETE | IN_ACCESS | IN_OPEN | IN_CLOSE_NOWRITE | IN_CLOSE_WRITE)
     def close(self):
         C.inotify_rm_watch(self.watcher, self.watch_obj)
         C.pynotiffy_close(self.watcher)
