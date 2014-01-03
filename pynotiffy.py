@@ -178,11 +178,7 @@ class Watcher:
         self.watcher = C.inotify_init()
         Watcher.watchers.append(self)
         self.listeners = []
-        self.create_listeners = []
-        self.delete_listeners = []
-        self.modify_listeners = []
-        self.access_listeners = []
-        self.open_listeners = []
+        self.listener_masks = {}
         self.watch_obj = C.inotify_add_watch(self.watcher, path, IN_MODIFY | IN_CREATE | IN_DELETE | IN_ACCESS | IN_OPEN)
     def close(self):
         C.inotify_rm_watch(self.watcher, self.watch_obj)
@@ -207,35 +203,18 @@ class Watcher:
         if evt[0] == None: 
             print "This shouldn't happen"
             return
-        if evt[0] & IN_CREATE:
-            for listener in self.create_listeners:
-                listener(evt)
-        if evt[0] & IN_DELETE:
-            for listener in self.delete_listeners:
-                listener(evt)
-        if evt[0] & IN_MODIFY:
-            for listener in self.modify_listeners:
-                listener(evt)
-        if evt[0] & IN_ACCESS:
-            for listener in self.access_listeners:
-                listener(evt)
-        if evt[0] & IN_OPEN:
-            for listener in self.open_listeners:
-                listener(evt)
+        for mask in self.listener_masks.keys():
+            if mask & evt[0]: 
+                for listener in self.listener_masks[mask]:
+                    listener(evt)
 
 
     def add_listener(self, listener, mask=None):
         if mask == None:
             self.listeners.append(listener)
             return
-        if mask & IN_CREATE:
-            self.create_listeners.append(listener)
-        if mask & IN_DELETE:
-            self.delete_listeners.append(listener)
-        if mask & IN_MODIFY:
-            self.modify_listeners.append(listener)
-        if mask & IN_OPEN:
-            self.open_listeners.append(listener)
-        if mask & IN_ACCESS:
-            self.access_listeners.append(listener)
+        if self.listener_masks.get(mask) == None:
+            self.listener_masks[mask] = [listener]
+        else:
+            self.listener_masks[mask].append(listener)
 
