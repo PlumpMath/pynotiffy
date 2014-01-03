@@ -210,13 +210,18 @@ class Watcher:
             mask = IN_MODIFY | IN_CREATE | IN_DELETE | IN_ACCESS | IN_OPEN | IN_CLOSE_NOWRITE | IN_CLOSE_WRITE | IN_ATTRIB
         self.watcher = C.inotify_init()
         Watcher.watchers.append(self)
+        self.closed = False
         self.listeners = []
         self.listener_masks = {}
         self.watch_obj = C.inotify_add_watch(self.watcher, path, mask)
     def close(self):
+        self.closed = True
         C.inotify_rm_watch(self.watcher, self.watch_obj)
         C.pynotiffy_close(self.watcher)
         Watcher.watchers.remove(self)
+    def __del__(self):
+        if not self.closed:
+            self.close()
     def block_poll(self):
         C.block_read_events(self.watcher)
         self.handle_events()
